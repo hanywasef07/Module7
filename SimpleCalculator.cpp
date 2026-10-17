@@ -8,7 +8,7 @@ using namespace std;
 
 SimpleCalculator::SimpleCalculator()
 {
-    // Constructor does not need to initialize anything.
+    
 }
 
 // Precondition: a and b are operands, and op is an arithmetic operator.
@@ -121,7 +121,9 @@ double SimpleCalculator::evaluate(const string& expression)
         else if (isdigit(static_cast<unsigned char>(ch)) || ch == '.')
         {
             if (!expectOperand)
+            {
                 throw runtime_error("ERROR: Invalid arithmetic expression.");
+            }
 
             size_t length;
             double number = stod(expression.substr(i), &length);
@@ -134,7 +136,9 @@ double SimpleCalculator::evaluate(const string& expression)
         else if (ch == '(')
         {
             if (!expectOperand)
+            {
                 throw runtime_error("Invalid expression.");
+            }
 			hasParentheses = true; // Set the flag to true since we encountered an opening parenthesis.
 
             operators.push(ch);
@@ -143,7 +147,9 @@ double SimpleCalculator::evaluate(const string& expression)
         else if (ch == ')')
         {
             if (expectOperand)
+            {
                 throw runtime_error("Invalid expression.");
+            }
 
             while (!operators.empty() && operators.top() != '(')
             {
@@ -154,7 +160,9 @@ double SimpleCalculator::evaluate(const string& expression)
             }
 
             if (operators.empty())
+            {
                 throw runtime_error("Parentheses don't match.");
+            }
 
             operators.pop();
             expectOperand = false;
@@ -164,7 +172,9 @@ double SimpleCalculator::evaluate(const string& expression)
             ch == '*' || ch == '/' || ch == '^')
         {
             if (expectOperand)
+            {
                 throw runtime_error("Invalid expression.");
+            }
 
             while (!operators.empty() && operators.top() != '(' && (precedence(operators.top()) > precedence(ch) || (precedence(operators.top()) == precedence(ch) && ch != '^')))
             {
@@ -193,18 +203,120 @@ double SimpleCalculator::evaluate(const string& expression)
         operators.pop();
 
         if (op == '(')
+        {
             throw runtime_error("Parentheses don't match.");
+        }
 
         processOperator(op);
     }
 
     if (!hasParentheses)
+    {
         throw runtime_error("Parentheses don't match.");
+    }
 
     if (operands.size() != ONE)
+    {
         throw runtime_error("Invalid expression.");
-
-
+    }
 
     return operands.top();
+}
+
+// Precondition: expression contains an infix arithmetic expression.
+// Postcondition: Returns the equivalent postfix expression.
+string SimpleCalculator::infixToPostfix(const string& expression)
+{
+    stack<char> opStack;
+    string postfix = "";
+
+    for (size_t i = 0; i < expression.length(); i++)
+    {
+        char ch = expression[i];
+
+        // Ignore spaces.
+        if (isspace(static_cast<unsigned char>(ch)))
+        {
+            continue;
+        }
+
+        // Handle numbers and variables.
+        if (isdigit(static_cast<unsigned char>(ch)) || isalpha(static_cast<unsigned char>(ch)) || ch == '.')
+        {
+            while (i < expression.length() && (isalnum(static_cast<unsigned char>(expression[i])) || expression[i] == '.'))
+            {
+                postfix += expression[i];
+                i++;
+            }
+
+            postfix += ' ';
+            i--;
+        }
+
+        // Handle opening parentheses.
+        else if (ch == '(')
+        {
+            opStack.push(ch);
+        }
+
+        // Handle closing parentheses.
+        else if (ch == ')')
+        {
+            while (!opStack.empty() && opStack.top() != '(')
+            {
+                postfix += opStack.top();
+                postfix += ' ';
+                opStack.pop();
+            }
+
+            if (opStack.empty())
+            {
+                throw runtime_error("inbalanced parentheses.");
+            }
+
+            opStack.pop();
+        }
+
+        // Handle arithmetic operators.
+        else if (ch == '+' || ch == '-' ||
+            ch == '*' || ch == '/' || ch == '^')
+        {
+            while (!opStack.empty() && opStack.top() != '(' &&
+                (precedence(opStack.top()) > precedence(ch) ||
+                    (precedence(opStack.top()) == precedence(ch) && ch != '^')))
+            {
+                postfix += opStack.top();
+                postfix += ' ';
+                opStack.pop();
+            }
+
+            opStack.push(ch);
+        }
+
+        else
+        {
+            throw runtime_error("Invalid character.");
+        }
+    }
+
+    // Process remaining operators.
+    while (!opStack.empty())
+    {
+        if (opStack.top() == '(')
+        {
+            throw runtime_error("Parentheses don't match.");
+        }
+
+        postfix += opStack.top();
+        postfix += ' ';
+        opStack.pop();
+    }
+
+    // Remove the last space.
+    if (!postfix.empty())
+    {
+        postfix.pop_back();
+    }
+
+    return postfix;
 }

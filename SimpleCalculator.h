@@ -17,6 +17,7 @@ private:
 public:
 	SimpleCalculator(); // Constructor
 	double evaluate(const string& expression); // Function to evaluate an arithmetic expression
+	string infixToPostfix(const string& expression); // Option 2
 
 };
 

@@ -50,9 +50,27 @@ int main()
             break;
         }
         case '2':
-      
+        {
+			system("cls");
+            SimpleCalculator calculator2;
 
+            cout << "\n\t2> Translation of Arithmetic Expression";
+            cout << "\n" << string(90, char(196));
+
+            string expression = inputString("\n\tEnter an infix expression: \n", true);
+            try
+            {
+                string postfix = calculator2.infixToPostfix(expression);
+                cout << "\n\tPostfix expression: " << postfix << "\n";
+            }
+            catch (const exception& e)
+            {
+                cout << "\n\t\tPostfix expression: ERROR: " << e.what() << "\n";
+            }
+			cout << "\n\n";
+            system("pause");
             break;
+        }
         case '3':
      
 
