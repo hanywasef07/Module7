@@ -5,6 +5,7 @@
 #include <iostream>
 #include "input.h"
 #include "SimpleCalculator.h"
+#include "nQueens.h"
 
 using namespace std;
 
@@ -72,9 +73,37 @@ int main()
             break;
         }
         case '3':
-     
+        {
+            system("cls");
+            cout << "\n\t\t3> n-Queens Problem";
+            cout << "\n\t\t" << string(70, char(196));
 
+            int n;
+            int firstColumn;
+            // Validate the number of queens.
+            do
+            {
+                n = inputInteger("\n\t\tEnter a number(1..100) of queens: ", 1, 100);
+
+            } while (n < 1 || n > 100);
+
+            // Validate the starting column.
+            firstColumn = inputInteger("\n\t\tEnter the column(1.." + to_string(n) + ") to place the first queen: ", 1, n);
+            nQueens game(n);
+   
+            if (game.solve(firstColumn))
+            {
+                cout << "\n\t" << n << "-Queens solution";
+                game.display();
+            }
+            else
+            {
+                cout << "\n\t\tNo solution\n";
+            }
+            cout << "\n\n";
+            system("pause");
             break;
+        }
         case '0':
             cout << "Exiting the program.\n";
             running = false;
