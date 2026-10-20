@@ -68,7 +68,9 @@ void SimpleCalculator::processOperator(char op)
 {
 	const short TWO = 2; 
     if (operands.size() < TWO)
+    {
         throw runtime_error("Invalid expression.");
+    }
 
     double b = operands.top();
     operands.pop();
@@ -94,7 +96,9 @@ double SimpleCalculator::evaluate(const string& expression)
     }
     // Clear both stacks.
     while (!operands.empty())
+    {
         operands.pop();
+    }
 
     while (!operators.empty())
         operators.pop();
@@ -225,10 +229,14 @@ double SimpleCalculator::evaluate(const string& expression)
 
 // Precondition: expression contains an infix arithmetic expression.
 // Postcondition: Returns the equivalent postfix expression.
+// Throws an exception if the expression is invalid.
 string SimpleCalculator::infixToPostfix(const string& expression)
 {
     stack<char> opStack;
     string postfix = "";
+
+    bool expectOperand = true;
+    int parenthesesCount = 0;
 
     for (size_t i = 0; i < expression.length(); i++)
     {
@@ -240,10 +248,112 @@ string SimpleCalculator::infixToPostfix(const string& expression)
             continue;
         }
 
-        // Handle numbers and variables.
-        if (isdigit(static_cast<unsigned char>(ch)) || isalpha(static_cast<unsigned char>(ch)) || ch == '.')
+        // Handle negative and positive numbers.
+        if ((ch == '-' || ch == '+') && expectOperand)
         {
-            while (i < expression.length() && (isalnum(static_cast<unsigned char>(expression[i])) || expression[i] == '.'))
+            size_t next = i + 1;
+
+            // Skip spaces after the sign.
+            while (next < expression.length() && isspace(static_cast<unsigned char>(expression[next])))
+            {
+                next++;
+            }
+
+            // Check whether the sign belongs to a number.
+            if (next < expression.length() && (isdigit(static_cast<unsigned char>(expression[next])) || expression[next] == '.'))
+            {
+                postfix += ch;
+
+                i = next;
+
+                bool hasDigit = false;
+                bool hasDecimal = false;
+
+                while (i < expression.length() && (isdigit(static_cast<unsigned char>(expression[i])) || expression[i] == '.'))
+                {
+                    if (expression[i] == '.')
+                    {
+                        if (hasDecimal)
+                        {
+                            throw runtime_error("Invalid decimal number.");
+                        }
+
+                        hasDecimal = true;
+                    }
+                    else
+                    {
+                        hasDigit = true;
+                    }
+
+                    postfix += expression[i];
+                    i++;
+                }
+
+                if (!hasDigit)
+                {
+                    throw runtime_error("Invalid number.");
+                }
+
+                postfix += ' ';
+                i--;
+
+                expectOperand = false;
+                continue;
+            }
+        }
+
+        // Handle numbers.
+        if (isdigit(static_cast<unsigned char>(ch)) || ch == '.')
+        {
+            // Two operands cannot appear without an operator.
+            if (!expectOperand)
+            {
+                throw runtime_error("Missing operator between operands.");
+            }
+
+            bool hasDigit = false;
+            bool hasDecimal = false;
+
+            while (i < expression.length() && (isdigit(static_cast<unsigned char>(expression[i])) || expression[i] == '.'))
+            {
+                if (expression[i] == '.')
+                {
+                    if (hasDecimal)
+                    {
+                        throw runtime_error("Invalid decimal number.");
+                    }
+
+                    hasDecimal = true;
+                }
+                else
+                {
+                    hasDigit = true;
+                }
+
+                postfix += expression[i];
+                i++;
+            }
+
+            if (!hasDigit)
+            {
+                throw runtime_error("Invalid number.");
+            }
+
+            postfix += ' ';
+            i--;
+
+            expectOperand = false;
+        }
+
+        // Handle variables.
+        else if (isalpha(static_cast<unsigned char>(ch)))
+        {
+            if (!expectOperand)
+            {
+                throw runtime_error("Missing operator between operands.");
+            }
+
+            while (i < expression.length() && isalnum(static_cast<unsigned char>(expression[i])))
             {
                 postfix += expression[i];
                 i++;
@@ -251,17 +361,35 @@ string SimpleCalculator::infixToPostfix(const string& expression)
 
             postfix += ' ';
             i--;
+
+            expectOperand = false;
         }
 
         // Handle opening parentheses.
         else if (ch == '(')
         {
+            if (!expectOperand)
+            {
+                throw runtime_error("Missing operator before '('.");
+            }
+
             opStack.push(ch);
+            parenthesesCount++;
         }
 
         // Handle closing parentheses.
         else if (ch == ')')
         {
+            if (parenthesesCount == 0)
+            {
+                throw runtime_error("Parentheses don't match.");
+            }
+
+            if (expectOperand)
+            {
+                throw runtime_error("Missing operand before ')'.");
+            }
+
             while (!opStack.empty() && opStack.top() != '(')
             {
                 postfix += opStack.top();
@@ -271,19 +399,26 @@ string SimpleCalculator::infixToPostfix(const string& expression)
 
             if (opStack.empty())
             {
-                throw runtime_error("inbalanced parentheses.");
+                throw runtime_error("Parentheses don't match.");
             }
 
             opStack.pop();
+            parenthesesCount--;
+
+            expectOperand = false;
         }
 
         // Handle arithmetic operators.
         else if (ch == '+' || ch == '-' ||
             ch == '*' || ch == '/' || ch == '^')
         {
-            while (!opStack.empty() && opStack.top() != '(' &&
-                (precedence(opStack.top()) > precedence(ch) ||
-                    (precedence(opStack.top()) == precedence(ch) && ch != '^')))
+            // An operator must have a left operand.
+            if (expectOperand)
+            {
+                throw runtime_error("Missing operand before operator.");
+            }
+
+            while (!opStack.empty() && opStack.top() != '(' && (precedence(opStack.top()) > precedence(ch) || (precedence(opStack.top()) == precedence(ch) && ch != '^')))
             {
                 postfix += opStack.top();
                 postfix += ' ';
@@ -291,12 +426,27 @@ string SimpleCalculator::infixToPostfix(const string& expression)
             }
 
             opStack.push(ch);
+
+            // After an operator, another operand is required.
+            expectOperand = true;
         }
 
         else
         {
             throw runtime_error("Invalid character.");
         }
+    }
+
+    // Check whether the expression ends with an operator.
+    if (expectOperand)
+    {
+        throw runtime_error("Missing operand at the end of expression.");
+    }
+
+    // Check unmatched parentheses.
+    if (parenthesesCount != 0)
+    {
+        throw runtime_error("Parentheses don't match.");
     }
 
     // Process remaining operators.
@@ -320,3 +470,4 @@ string SimpleCalculator::infixToPostfix(const string& expression)
 
     return postfix;
 }
+
