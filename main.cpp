@@ -1,4 +1,4 @@
-//Name: Hany, Aleeza, and Thanh
+//Name: Hany, Aleeza, Thanh, Victor, and Jacob
 // Date: 10/19/2026
 // Description: Module 7 
 
@@ -119,7 +119,7 @@ int main()
 
 char menuOption()
 {
-    cout << "\t\t  CMPR131 Chapter 7: Applications using Stacks by Hany, Aleeza, and Thanh (10/19/2026)\n";
+    cout << "\t\t  CMPR131 Chapter 7: Applications using Stacks by Hany, Aleeza, Thanh, Victor, and Jacob (10/19/2026)\n";
     cout << "\t\t" << string(90, char(205));
     cout << "\n\t\t  1> Simple Calculator (problem 9, pg 391)";
     cout << "\n\t\t  2> Translation of arithmetic expression (problem 10, pg 391)";
